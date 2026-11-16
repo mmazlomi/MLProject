@@ -1,0 +1,26 @@
+#https://www.kaggle.com/datasets/jessemostipak/hotel-booking-demand/data
+# Scientific computing
+numpy
+scipy
+pandas
+
+# AI / Machine Learning
+scikit-learn
+
+# Visualization
+matplotlib
+seaborn
+plotly
+
+# Desktop GUI
+PySide6
+
+# Jupyter
+jupyterlab
+ipykernel
+
+# Development tools
+pytest
+black
+ruff
+ipython
