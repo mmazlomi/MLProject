@@ -5,6 +5,10 @@ Executes all 13 Workflow Stages End-to-End:
 2. Data Collection
 3. Exploratory Data Analysis (EDA)
 
+Developed by Mahmood Mazloomi
+For the Machine Learning course
+Instructor: Dr. Nadi
+University of Tehran – Kish Campus
 """
 import sys
 from pathlib import Path
@@ -21,7 +25,7 @@ from src.config import (
 )
 from src.data_loader import load_raw_data, get_data_summary
 from src.eda import run_eda
-
+from src.data_quality import assess_data_quality, clean_data_quality_issues
 
 def print_stage_header(stage_num: int, title: str):
     separator = "=" * 80
@@ -34,7 +38,7 @@ def run_ml_pipeline():
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     
-    # -------------------------------------------------------------
+     # -------------------------------------------------------------
     # 1. Problem Definition
     # -------------------------------------------------------------
     print_stage_header(1, "Problem Definition")
@@ -42,7 +46,7 @@ def run_ml_pipeline():
         "Objective": "Predict the likelihood of hotel reservation cancellations prior to arrival.",
         "Target": "is_canceled (0 = Booking Honored, 1 = Booking Canceled)",
         "Business Goal": "Empower hotel revenue management to mitigate cancellation revenue loss, optimize overbooking thresholds, and protect high-value customer relationships.",
-        "Evaluation Criteria": "ROC-AUC (primary ranking metric), F1-Score (balance of Precision & Recall), Recall on Class 1 (catching cancellations early), and Precision (avoiding false alarms)."
+        "Evaluation Criteria": "ROC-AUC & PR-AUC (ranking), F1-Score & Recall (thresholded on validation set), Brier Score (calibration)."
     }
     for k, v in problem_def.items():
         print(f"  [{k}]: {v}")
@@ -63,15 +67,26 @@ def run_ml_pipeline():
     # -------------------------------------------------------------
     print_stage_header(3, "Exploratory Data Analysis (EDA)")
     eda_insights = run_eda(raw_df, output_dir=FIGURES_DIR)
-    print("Generated and saved EDA visual figures:")
-    print("  - artifacts/figures/eda_target_distribution.png")
-    print("  - artifacts/figures/eda_hotel_cancellation.png")
-    print("  - artifacts/figures/eda_lead_time_distribution.png")
-    print("  - artifacts/figures/eda_deposit_cancellation.png")
-    print("  - artifacts/figures/eda_monthly_seasonality.png")
-    print("  - artifacts/figures/eda_numerical_correlation.png")
     print(f"Key Insight: Overall raw cancellation rate = {eda_insights['cancellation_rate_overall']:.1f}%")
     print(f"Key Insight: Canceled bookings have median lead time of {eda_insights['lead_time_median_canceled']:.0f} days vs {eda_insights['lead_time_median_honored']:.0f} days for honored bookings.")
+
+    # -------------------------------------------------------------
+    # 4. Data Quality Assessment
+    # -------------------------------------------------------------
+    print_stage_header(4, "Data Quality Assessment")
+    quality_report = assess_data_quality(raw_df)
+    print(f"Identified {quality_report['duplicates']['count']:,} duplicate rows ({quality_report['duplicates']['percentage']:.2f}%).")
+    invalid = quality_report["invalid_records"]
+    print(f"Invalid bookings (0 guests): {invalid.get('zero_guest_bookings', 0)} | 0-night bookings: {invalid.get('zero_night_bookings', 0)}")
+    print(f"Anomalous ADR (negative or >= 5000): {invalid.get('negative_adr', 0) + invalid.get('extreme_adr', 0)}")
+    print(f"Critical Data Leakage Columns Found: {quality_report['potential_leakage_columns']} (Purged)")
+
+    clean_df, clean_audit = clean_data_quality_issues(raw_df, drop_duplicates=True)
+    print(
+        f"Rows after quality cleaning: {clean_df.shape[0]:,} "
+        f"(Removed {clean_audit['total_rows_removed']:,} records; "
+        f"feature-level duplicates removed: {clean_audit['duplicates_removed']:,})"
+    )
 
   
 

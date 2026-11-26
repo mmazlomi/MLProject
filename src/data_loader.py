@@ -1,6 +1,11 @@
 """
 Workflow Step 2: Data Collection
 Loads raw data and reports basic structural properties.
+
+Developed by Mahmood Mazloomi
+For the Machine Learning course
+Instructor: Dr. Nadi
+University of Tehran – Kish Campus
 """
 import sys
 from pathlib import Path
